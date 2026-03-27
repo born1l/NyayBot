@@ -1,23 +1,46 @@
-// ─── Config ───────────────────────────────────────────
-const API_URL = "https://api.anthropic.com/v1/messages";
-const MODEL = "claude-sonnet-4-20250514";
-const API_KEY = "YOUR_API_KEY_HERE"; // 🔑 Replace with your Anthropic API key
+const DEMO_RESPONSES = {
+  "What are my rights if the police refuse to register my FIR?":
+    "Under Section 154 of the CrPC, the police are legally required to register your FIR — they cannot refuse. If they do, you can send your complaint in writing to the Superintendent of Police, or directly approach a Magistrate under Section 156(3). You also have the right to file a complaint online via your state police portal.\n\nYou're not helpless here — the law is clearly on your side. Take that next step with confidence.",
 
-const SYSTEM_PROMPT = `You are NyayBot, a civic rights assistant for Indian citizens. You help people understand their legal rights and grievance options in simple, plain language — no legal jargon.
+  "I bought a defective product and the seller is refusing a refund. What are my consumer rights?":
+    "Under the Consumer Protection Act 2019, you have the right to a refund, replacement, or compensation for any defective product. The seller cannot legally refuse if the product is genuinely defective. You can file a complaint at the National Consumer Helpline (1800-11-4000) or online at consumerhelpline.gov.in — it's free.\n\nKeep your bill and any photos of the defect as evidence. You've got this.",
 
-When a user describes their problem:
-1. Briefly explain what rights they have in 2-3 sentences max. Be direct and empathetic.
-2. Tell them what they can do next — what kind of authority or process applies.
-3. Keep it conversational. Avoid bullet points for the explanation part. Use them only if listing steps.
-4. End with a short line of encouragement.
+  "My employer is not paying my salary on time. What are my labour rights?":
+    "Under the Payment of Wages Act, your employer is legally required to pay your salary on time — delays are a violation. You can file a complaint with the Labour Commissioner in your state. If your PF is also being withheld, EPFO has a separate grievance portal at epfigms.gov.in.\n\nDocument everything — salary slips, messages, bank records. That paper trail will protect you.",
 
-Important:
-- Always clarify you are not a lawyer and this is general information.
-- If the problem is unclear, ask ONE clarifying question.
-- Keep responses concise — under 200 words.
-- Respond in English by default, but if the user writes in Hindi, respond in Hindi.`;
+  "I am facing domestic violence. What are my rights as a woman in India?":
+    "Under the Protection of Women from Domestic Violence Act 2005, you have the right to protection, residence, and compensation. You can call the Women Helpline at 1091 anytime — it's free and confidential. You can also approach the National Commission for Women or your nearest police station.\n\nYou don't have to face this alone. Help is available and the law strongly protects you.",
 
-// ─── Theme Toggle (defined first — must be global for onclick) ────
+  "My landlord is threatening to evict me illegally. What are my rights as a tenant?":
+    "A landlord cannot evict you without proper legal notice and due process — illegal eviction is a punishable offence. If you have a rent agreement, you are protected under state Rent Control laws. You can approach the Rent Control Court or file a complaint at your local police station if there's harassment.\n\nDon't vacate under pressure. Know that the law requires proper procedure before any eviction.",
+
+  "A government office is not processing my application. What can I do?":
+    "You can file a grievance on the Central Government's CPGRAMS portal at pgportal.gov.in — it's free and tracked. Under the Right to Service Act (in most states), government offices are bound by a time limit to process your application. You can also approach the local ombudsman or your elected representative.\n\nYour application matters. Push back through official channels — it works.",
+
+  "A hospital is refusing to treat me without advance payment. What are my rights?":
+    "Under MCI guidelines and the Clinical Establishments Act, no hospital can refuse emergency treatment due to inability to pay. If you're covered under Ayushman Bharat (PM-JAY), treatment must be cashless at empanelled hospitals. You can complain to the National Medical Commission or call the NHA helpline at 14555.\n\nIn a medical emergency, demand treatment first — payment cannot legally be a barrier.",
+
+  "I was scammed online and lost money via UPI. What should I do?":
+    "Report it immediately at cybercrime.gov.in or call the National Cyber Crime Helpline at 1930. The faster you report, the higher the chance of freezing the fraudster's account. Also inform your bank right away to flag the transaction. For UPI fraud, RBI's ombudsman at 14448 can help recover funds.\n\nTime is critical here — report within the first few hours for the best chance of recovery.",
+
+  // Starter prompts
+  "The police are refusing to file my FIR. What can I do?":
+    "The police are legally bound to register your FIR under Section 154 CrPC — refusal is itself an offence. If they refuse, write your complaint and send it by post to the Superintendent of Police. You can also directly approach a Magistrate under Section 156(3) or file online via your state police portal.\n\nDon't back down — the law is firmly on your side.",
+
+  "My landlord is not returning my security deposit after I vacated.":
+    "Your landlord is legally required to return the security deposit after deducting only legitimate damages — they cannot withhold it without reason. Send a formal written notice first. If they still refuse, you can approach the Rent Control Court or file a consumer complaint. Keep all receipts, messages, and your rental agreement handy.\n\nA written notice alone often does the trick. Start there.",
+
+  "I was scammed online and lost money. How do I report it?":
+    "Report it immediately on cybercrime.gov.in or call 1930 — the National Cyber Crime Helpline. At the same time, call your bank to flag and freeze the transaction. The sooner you act, the better your chances of recovery. Take screenshots of all communication with the scammer as evidence.\n\nEvery minute counts — report now, details later.",
+
+  "My employer has not paid my salary for 2 months. What should I do?":
+    "Withholding salary is a violation of the Payment of Wages Act. First send a written demand to your employer via email or letter — this creates a paper trail. If no response, file a complaint with your state's Labour Commissioner. You can also approach the Labour Court for recovery of dues.\n\nYou have every right to your earned wages. Don't let this slide.",
+};
+
+const FALLBACK_RESPONSE =
+  "This is a demo version of NyayBot. For this demonstration, responses are available for the 8 categories in the sidebar and the 4 starter prompts on the welcome screen. In the full version, you can type any grievance and get an AI-powered response.\n\nTry clicking one of the categories on the left or the starter prompts!";
+
+// ─── Theme Toggle ─────────────────────────────────────
 const themes = [
   { key: "dark", emoji: "🌿", label: "Warm" },
   { key: "warm", emoji: "🌑", label: "Dark" },
@@ -42,7 +65,6 @@ function toggleTheme() {
   try { localStorage.setItem("nyaybot-theme", current.key); } catch(e) {}
 }
 
-// Restore saved theme on load
 (function initTheme() {
   try {
     const saved = localStorage.getItem("nyaybot-theme");
@@ -61,7 +83,6 @@ function toggleTheme() {
 })();
 
 // ─── State ────────────────────────────────────────────
-let conversationHistory = [];
 let authorities = [];
 let isLoading = false;
 let chatStarted = false;
@@ -115,7 +136,7 @@ function renderAuthorityCards(matches) {
   return html;
 }
 
-// ─── Show chat, hide welcome ───────────────────────────
+// ─── Show chat ─────────────────────────────────────────
 function startChat() {
   if (!chatStarted) {
     chatStarted = true;
@@ -125,7 +146,7 @@ function startChat() {
   }
 }
 
-// ─── Add message to chat ───────────────────────────────
+// ─── Add message ───────────────────────────────────────
 function addMessage(role, content, authorityCards = "") {
   startChat();
   const div = document.createElement("div");
@@ -161,35 +182,20 @@ function removeTyping() {
   if (el) el.remove();
 }
 
-// ─── Call Claude API ───────────────────────────────────
-async function callClaude(userMessage) {
-  conversationHistory.push({ role: "user", content: userMessage });
+// ─── Get demo response ─────────────────────────────────
+function getDemoResponse(message) {
+  // exact match first
+  if (DEMO_RESPONSES[message]) return DEMO_RESPONSES[message];
 
-  const response = await fetch(API_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": API_KEY,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 1000,
-      system: SYSTEM_PROMPT,
-      messages: conversationHistory,
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `HTTP ${response.status}`);
+  // fuzzy match — check if any key is substantially contained
+  const lower = message.toLowerCase();
+  for (const [key, val] of Object.entries(DEMO_RESPONSES)) {
+    const keyWords = key.toLowerCase().split(" ").filter(w => w.length > 4);
+    const hits = keyWords.filter(w => lower.includes(w));
+    if (hits.length >= 3) return val;
   }
 
-  const data = await response.json();
-  const reply = data.content?.[0]?.text || "Sorry, I couldn't get a response.";
-  conversationHistory.push({ role: "assistant", content: reply });
-  return reply;
+  return FALLBACK_RESPONSE;
 }
 
 // ─── Send message ──────────────────────────────────────
@@ -205,20 +211,18 @@ async function sendMessage(text) {
   addMessage("user", message);
   showTyping();
 
-  try {
-    const reply = await callClaude(message);
-    removeTyping();
-    const matches = matchAuthorities(message);
-    const cards = renderAuthorityCards(matches);
-    addMessage("bot", reply, cards);
-  } catch (err) {
-    removeTyping();
-    addMessage("bot", `Something went wrong: ${err.message}. Make sure your API key is set in app.js.`);
-  } finally {
-    isLoading = false;
-    sendBtn.disabled = false;
-    userInput.focus();
-  }
+  // fake delay — feels natural
+  await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
+
+  removeTyping();
+  const reply = getDemoResponse(message);
+  const matches = matchAuthorities(message);
+  const cards = renderAuthorityCards(matches);
+  addMessage("bot", reply, cards);
+
+  isLoading = false;
+  sendBtn.disabled = false;
+  userInput.focus();
 }
 
 // ─── Category sidebar click ────────────────────────────
@@ -233,7 +237,7 @@ function handleStarter(text) {
   sendMessage(text);
 }
 
-// ─── Input auto-resize + enter to send ────────────────
+// ─── Input resize + enter to send ─────────────────────
 userInput.addEventListener("input", () => {
   userInput.style.height = "auto";
   userInput.style.height = Math.min(userInput.scrollHeight, 120) + "px";
