@@ -1,6 +1,7 @@
 // ─── Config ───────────────────────────────────────────
 const API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-20250514";
+const API_KEY = "YOUR_API_KEY_HERE"; // 🔑 Replace with your Anthropic API key
 
 const SYSTEM_PROMPT = `You are NyayBot, a civic rights assistant for Indian citizens. You help people understand their legal rights and grievance options in simple, plain language — no legal jargon.
 
@@ -16,10 +17,54 @@ Important:
 - Keep responses concise — under 200 words.
 - Respond in English by default, but if the user writes in Hindi, respond in Hindi.`;
 
+// ─── Theme Toggle (defined first — must be global for onclick) ────
+const themes = [
+  { key: "dark", emoji: "🌿", label: "Warm" },
+  { key: "warm", emoji: "🌑", label: "Dark" },
+];
+let currentThemeIndex = 0;
+
+function toggleTheme() {
+  currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+  const current = themes[currentThemeIndex];
+
+  if (current.key === "dark") {
+    document.documentElement.removeAttribute("data-theme");
+  } else {
+    document.documentElement.setAttribute("data-theme", current.key);
+  }
+
+  const btn = document.getElementById("themeToggleBtn");
+  const label = document.getElementById("themeLabel");
+  if (btn) btn.textContent = current.emoji;
+  if (label) label.textContent = themes[(currentThemeIndex + 1) % themes.length].label;
+
+  try { localStorage.setItem("nyaybot-theme", current.key); } catch(e) {}
+}
+
+// Restore saved theme on load
+(function initTheme() {
+  try {
+    const saved = localStorage.getItem("nyaybot-theme");
+    if (saved && saved !== "dark") {
+      const idx = themes.findIndex(t => t.key === saved);
+      if (idx !== -1) {
+        currentThemeIndex = idx;
+        document.documentElement.setAttribute("data-theme", saved);
+        const btn = document.getElementById("themeToggleBtn");
+        const label = document.getElementById("themeLabel");
+        if (btn) btn.textContent = themes[idx].emoji;
+        if (label) label.textContent = themes[(idx + 1) % themes.length].label;
+      }
+    }
+  } catch(e) {}
+})();
+
 // ─── State ────────────────────────────────────────────
 let conversationHistory = [];
 let authorities = [];
 let isLoading = false;
+let chatStarted = false;
 
 // ─── DOM Refs ─────────────────────────────────────────
 const chatArea = document.getElementById("chatArea");
@@ -43,12 +88,10 @@ function matchAuthorities(text) {
   const matched = [];
   for (const cat of authorities) {
     const hits = cat.keywords.filter(k => lower.includes(k));
-    if (hits.length > 0) {
-      matched.push({ ...cat, score: hits.length });
-    }
+    if (hits.length > 0) matched.push({ ...cat, score: hits.length });
   }
   matched.sort((a, b) => b.score - a.score);
-  return matched.slice(0, 2); // top 2 categories
+  return matched.slice(0, 2);
 }
 
 // ─── Render authority cards ────────────────────────────
@@ -72,16 +115,21 @@ function renderAuthorityCards(matches) {
   return html;
 }
 
-// ─── Add message to chat ───────────────────────────────
-function addMessage(role, content, authorityCards = "") {
-  if (welcomeScreen.style.display !== "none") {
+// ─── Show chat, hide welcome ───────────────────────────
+function startChat() {
+  if (!chatStarted) {
+    chatStarted = true;
     welcomeScreen.style.display = "none";
+    chatArea.style.display = "flex";
     chatArea.classList.add("active");
   }
+}
 
+// ─── Add message to chat ───────────────────────────────
+function addMessage(role, content, authorityCards = "") {
+  startChat();
   const div = document.createElement("div");
   div.className = `message ${role}`;
-
   const avatarEmoji = role === "bot" ? "⚖️" : "👤";
   div.innerHTML = `
     <div class="avatar ${role}">${avatarEmoji}</div>
@@ -89,30 +137,28 @@ function addMessage(role, content, authorityCards = "") {
       <p>${content.replace(/\n/g, "<br>")}</p>
       ${authorityCards}
     </div>`;
-
   chatArea.appendChild(div);
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
 // ─── Typing indicator ─────────────────────────────────
 function showTyping() {
+  startChat();
   const div = document.createElement("div");
   div.className = "message bot";
   div.id = "typingIndicator";
   div.innerHTML = `
     <div class="avatar bot">⚖️</div>
     <div class="bubble">
-      <div class="typing">
-        <span></span><span></span><span></span>
-      </div>
+      <div class="typing"><span></span><span></span><span></span></div>
     </div>`;
   chatArea.appendChild(div);
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
 function removeTyping() {
-  const indicator = document.getElementById("typingIndicator");
-  if (indicator) indicator.remove();
+  const el = document.getElementById("typingIndicator");
+  if (el) el.remove();
 }
 
 // ─── Call Claude API ───────────────────────────────────
@@ -121,7 +167,12 @@ async function callClaude(userMessage) {
 
   const response = await fetch(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 1000,
@@ -131,8 +182,8 @@ async function callClaude(userMessage) {
   });
 
   if (!response.ok) {
-    const err = await response.json();
-    throw new Error(err?.error?.message || "API error");
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `HTTP ${response.status}`);
   }
 
   const data = await response.json();
@@ -157,13 +208,12 @@ async function sendMessage(text) {
   try {
     const reply = await callClaude(message);
     removeTyping();
-
     const matches = matchAuthorities(message);
     const cards = renderAuthorityCards(matches);
     addMessage("bot", reply, cards);
   } catch (err) {
     removeTyping();
-    addMessage("bot", `Something went wrong: ${err.message}. Please check your API key or try again.`);
+    addMessage("bot", `Something went wrong: ${err.message}. Make sure your API key is set in app.js.`);
   } finally {
     isLoading = false;
     sendBtn.disabled = false;
@@ -175,8 +225,7 @@ async function sendMessage(text) {
 function handleCategoryClick(btn) {
   document.querySelectorAll(".category-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
-  const query = btn.dataset.query;
-  sendMessage(query);
+  sendMessage(btn.dataset.query);
 }
 
 // ─── Starter prompts ───────────────────────────────────
