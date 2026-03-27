@@ -1,11 +1,118 @@
-type <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NyayBot — Know Your Rights</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-    
+
+  <!-- ─── Header ─── -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚖️</div>
+      <h1>Nyay<span>Bot</span></h1>
+    </div>
+    <span class="header-badge">India · Civic Rights AI</span>
+  </header>
+
+  <!-- ─── App Layout ─── -->
+  <div class="app">
+
+    <!-- ─── Sidebar ─── -->
+    <aside class="sidebar">
+      <span class="sidebar-title">Browse by Issue</span>
+      <div class="category-list">
+        <button class="category-btn" data-query="What are my rights if the police refuse to register my FIR?" onclick="handleCategoryClick(this)">
+          <span class="category-icon">🚔</span> Police & Crime
+        </button>
+        <button class="category-btn" data-query="I bought a defective product and the seller is refusing a refund. What are my consumer rights?" onclick="handleCategoryClick(this)">
+          <span class="category-icon">🛒</span> Consumer Rights
+        </button>
+        <button class="category-btn" data-query="My employer is not paying my salary on time. What are my labour rights?" onclick="handleCategoryClick(this)">
+          <span class="category-icon">💼</span> Workplace & Labour
+        </button>
+        <button class="category-btn" data-query="I am facing domestic violence. What are my rights as a woman in India?" onclick="handleCategoryClick(this)">
+          <span class="category-icon">🛡️</span> Women's Safety
+        </button>
+        <button class="category-btn" data-query="My landlord is threatening to evict me illegally. What are my rights as a tenant?" onclick="handleCategoryClick(this)">
+          <span class="category-icon">🏠</span> Land & Property
+        </button>
+        <button class="category-btn" data-query="A government office is not processing my application. What can I do?" onclick="handleCategoryClick(this)">
+          <span class="category-icon">🏛️</span> Government Services
+        </button>
+        <button class="category-btn" data-query="A hospital is refusing to treat me without advance payment. What are my rights?" onclick="handleCategoryClick(this)">
+          <span class="category-icon">🏥</span> Medical & Health
+        </button>
+        <button class="category-btn" data-query="I was scammed online and lost money via UPI. What should I do?" onclick="handleCategoryClick(this)">
+          <span class="category-icon">🔐</span> Cyber Crime
+        </button>
+      </div>
+
+      <div class="sidebar-divider"></div>
+
+      <div class="disclaimer">
+        <strong>⚠️ Disclaimer</strong>
+        NyayBot provides general information only. It is not legal advice. For serious matters, consult a qualified lawyer.
+      </div>
+    </aside>
+
+    <!-- ─── Main ─── -->
+    <main class="main">
+
+      <!-- Welcome Screen -->
+      <div class="welcome" id="welcomeScreen">
+        <span class="welcome-badge">AI-Powered Civic Assistant</span>
+        <h2>Know your rights.<br /><em>Take action.</em></h2>
+        <p>Describe your problem in plain language. NyayBot will explain your rights and connect you with the right authority.</p>
+
+        <div class="starter-grid">
+          <button class="starter-btn" onclick="handleStarter('The police are refusing to file my FIR. What can I do?')">
+            🚔 Police refusing to file my FIR
+          </button>
+          <button class="starter-btn" onclick="handleStarter('My landlord is not returning my security deposit after I vacated.')">
+            🏠 Landlord not returning deposit
+          </button>
+          <button class="starter-btn" onclick="handleStarter('I was scammed online and lost money. How do I report it?')">
+            🔐 Got scammed online
+          </button>
+          <button class="starter-btn" onclick="handleStarter('My employer has not paid my salary for 2 months. What should I do?')">
+            💼 Employer not paying salary
+          </button>
+        </div>
+      </div>
+
+      <!-- Chat Area -->
+      <div class="chat-area" id="chatArea"></div>
+
+      <!-- Input Area -->
+      <div class="input-area">
+        <div class="input-wrap">
+          <textarea
+            id="userInput"
+            placeholder="Describe your problem... (e.g. 'My landlord is threatening me')"
+            rows="1"
+          ></textarea>
+          <button id="sendBtn" title="Send">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+        <p class="input-hint">Press Enter to send · Shift+Enter for new line · Not legal advice</p>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ─── Theme Toggle ─── -->
+  <div class="theme-toggle">
+    <span class="theme-label" id="themeLabel">Warm</span>
+    <button class="theme-toggle-btn" id="themeToggleBtn" title="Switch theme" onclick="toggleTheme()">🌿</button>
+  </div>
+
+  <script src="js/app.js"></script>
 </body>
 </html>
